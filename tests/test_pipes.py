@@ -1,3 +1,4 @@
+# encoding: utf-8
 import sys
 import os
 import unittest
@@ -13,10 +14,10 @@ class PipesTest(unittest.TestCase):
         from shpipes import Commands
 
         os.environ['PATH'] = os.path.join(test_dir, 'bin') + ':' + os.environ['PATH']
-        self.cmds = Commands()
+        self.shell = Commands()
 
     def test_path(self):
-        attrs = dir(self.cmds)
+        attrs = dir(self.shell)
         self.assertIn('wc_py', attrs)
         self.assertIn('eval_py', attrs)
         self.assertIn('grep_py', attrs)
@@ -24,10 +25,10 @@ class PipesTest(unittest.TestCase):
         self.assertNotIn('noexecfile', attrs)
 
     def test_math(self):
-        echo = self.cmds.echo_py('1+3*4')
-        cmd = echo | self.cmds.eval_py()
+        echo = self.shell.echo_py('1+3*4')
+        cmd = echo | self.shell.eval_py()
         self.assertEqual('13\n', cmd.getvalue())
-        cmd = echo | self.cmds.eval_py() | self.cmds.wc_py()
+        cmd = echo | self.shell.eval_py() | self.shell.wc_py()
         self.assertEqual('1\t1\t3\n', cmd.getvalue())
 
     def test_python(self):
@@ -41,21 +42,24 @@ class PipesTest(unittest.TestCase):
         self.assertIn(version, cmd.getvalue())
 
     def test_grep(self):
-        cmd = self.cmds.grep_py('.+foobarbaz', __file__)
+        cmd = self.shell.grep_py('.+foobarbaz', __file__)
         self.assertEqual(inspect.stack(2)[0].code_context[0], cmd.getvalue())
 
     def test_args(self):
-        cmd = self.cmds.echo_py('4**4')
-        cmd = self.cmds.eval_py(cmd.getvalue())
+        cmd = self.shell.echo_py('4**4')
+        cmd = self.shell.eval_py(cmd.getvalue())
         self.assertEqual('256\n', cmd.getvalue())
-        cmd = self.cmds.eval_py(self.cmds.echo_py('4**4'))
+        cmd = self.shell.eval_py(self.shell.echo_py('4**4'))
         self.assertEqual('256\n', cmd.getvalue())
 
     def test_bin(self):
-        cmd = self.cmds.echo_py('"\xff\xff"')
+        cmd = self.shell.echo_py('"\xff\xff"')
         self.assertEqual('ÿÿ\n', cmd.getvalue())
 
-    # self.cmds.massedit_py('-e', '''re.sub(r"^class", "classy", line)''')
+
+if __name__ == '__main__':
+    unittest.main()
+    # self.shell.massedit_py('-e', '''re.sub(r"^class", "classy", line)''')
 
 #
 # cmd = cmds.find('. -type f')

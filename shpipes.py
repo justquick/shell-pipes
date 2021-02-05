@@ -1,10 +1,21 @@
 import subprocess
 import os
 
+
+def get_shell():
+    if 'SHPIPES_SHELL' in os.environ:
+        return os.environ['SHPIPES_SHELL']
+    elif 'SHELL' in os.environ:
+        return os.environ['SHELL']
+    elif os.path.isfile('/bin/bash'):
+        return '/bin/bash'
+    return '/bin/sh'
+
+
 OPTIONS = {
     'stdout': subprocess.PIPE,
-    'shell': False if 'PIPES_NO_SHELL' in os.environ else True,
-    'executable': os.environ.get('PIPES_SHELL', '/bin/bash')
+    'shell': False if 'SHPIPES_NO_SHELL' in os.environ else True,
+    'executable': get_shell()
 }
 
 
@@ -51,9 +62,16 @@ class Pipe:
     def getvalue(self):
         chain = self.getchain()
         inp = chain[0].run()
+        procs = [inp]
         for link in chain[1:]:
             inp = link.run(inp)
+            procs.append(inp)
         value = inp.stdout.read()
+        for proc in procs:
+            proc.stdout.close()
+            proc.kill()
+            proc.wait()
+        inp.stdout.close()
         try:
             return value.decode('utf-8')
         except UnicodeDecodeError:

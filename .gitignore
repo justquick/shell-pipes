@@ -2,3 +2,6 @@ __pycache__/
 cover/
 .coverage
 .python-version
+shell_pipes.egg-info/
+dist/
+*.pyc
